@@ -1,45 +1,4 @@
-import threading
 from paste.request import parse_formvars
-from paste.response import HeaderDict
-
-webinfo = threading.local()
-
-class Request(object):
-    def __init__(self, environ):
-        self.environ = environ
-        self.fields = parse_formvars(environ)
-
-
-class Response(object):
-    def __init__(self):
-        self.headers = HeaderDict({'content-type': 'text/html'})
-
-
-class Root(object):
-    # The "index" method:
-    def __call__(self):
-        return '''
-        <form action="welcome">
-        Name: <input type="text" name="name">
-        <input type="submit">
-        </form>
-        '''
-
-    def welcome(self, name):
-        return 'Hello %s!' % name
-
-    def rss(self):
-        webinfo.response.headers['content-type'] = 'text/xml'
-        webinfo.response.body = '''<?xml version="1.0" encoding="UTF-8"?>
-            <note>
-                <to> Tove</to>
-                <from>Jani</from>
-                <heading>Reminder</heading>
-                <body>Don't forget me this weekend!</body>
-            </note>
-        '''
-        return webinfo.response.body
-
 
 class ObjectPublisher(object):
 
@@ -47,11 +6,10 @@ class ObjectPublisher(object):
         self.root = root
 
     def __call__(self, environ, start_response):
-        webinfo.request = Request(environ)
-        webinfo.response = Response()
+        fields = parse_formvars(environ)
         obj = self.find_object(self.root, environ)
-        response_body = obj(**dict(webinfo.request.fields))
-        start_response('200 OK', webinfo.response.headers.items())
+        response_body = obj(**fields.mixed())
+        start_response('200 OK', [('content-type', 'text/html')])
         return [response_body]
 
     def find_object(self, obj, environ):

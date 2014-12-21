@@ -8,7 +8,6 @@ class ObjectPublisher(object):
     def __call__(self, environ, start_response):
         fields = parse_formvars(environ)
         obj = self.find_object(self.root, environ)
-        import pdb;pdb.set_trace()
         response_body = obj(**fields.mixed())
         start_response('200 OK', [('content-type', 'text/html')])
         return [response_body]
